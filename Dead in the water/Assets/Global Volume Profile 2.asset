@@ -233,11 +233,11 @@ MonoBehaviour:
   m_Name: Global Volume Profile 2
   m_EditorClassIdentifier: 
   components:
+  - {fileID: -1424082425811104539}
+  - {fileID: 3894348298328410583}
+  - {fileID: 3545024568642147004}
   - {fileID: 4585547245897706815}
   - {fileID: -134047886205015312}
-  - {fileID: -1424082425811104539}
-  - {fileID: 3545024568642147004}
-  - {fileID: 3894348298328410583}
   - {fileID: -669172395198915414}
 --- !u!114 &3545024568642147004
 MonoBehaviour:
