@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DefaultVolumeProfile: {fileID: 11400000, guid: 14b392ee213d25a48b1feddbd9f5a9be,
     type: 2}
-  m_LookDevVolumeProfile: {fileID: 11400000, guid: 4594f4a3fb14247e192bcca6dc23c8ed,
+  m_LookDevVolumeProfile: {fileID: 11400000, guid: 14b392ee213d25a48b1feddbd9f5a9be,
     type: 2}
   m_RenderingPathDefaultCameraFrameSettings:
     bitDatas:
@@ -103,10 +103,14 @@ MonoBehaviour:
       hasProbeVolumes: 0
     - sceneGUID: 3d2f35f9e354913459c4a1752b0620a0
       hasProbeVolumes: 0
+    - sceneGUID: ca3dffc638722ea4e80f42cc78f9b71b
+      hasProbeVolumes: 0
     serializedProfiles:
     - sceneGUID: 00000000000000000000000000000000
       profile: {fileID: 11400000, guid: ceab2f947de79d341bb6eb9465c6ad55, type: 2}
     - sceneGUID: 3d2f35f9e354913459c4a1752b0620a0
+      profile: {fileID: 11400000, guid: ceab2f947de79d341bb6eb9465c6ad55, type: 2}
+    - sceneGUID: ca3dffc638722ea4e80f42cc78f9b71b
       profile: {fileID: 11400000, guid: ceab2f947de79d341bb6eb9465c6ad55, type: 2}
     serializedBakeSettings:
     - sceneGUID: 00000000000000000000000000000000
@@ -145,11 +149,30 @@ MonoBehaviour:
           collisionMask:
             serializedVersion: 2
             m_Bits: 4294967291
+    - sceneGUID: ca3dffc638722ea4e80f42cc78f9b71b
+      settings:
+        m_Version: 1
+        dilationSettings:
+          enableDilation: 1
+          dilationDistance: 1
+          dilationValidityThreshold: 0.25
+          dilationIterations: 1
+          squaredDistWeighting: 1
+        virtualOffsetSettings:
+          useVirtualOffset: 1
+          outOfGeoOffset: 0.01
+          searchMultiplier: 0.2
+          rayOriginBias: -0.001
+          maxHitsPerRay: 10
+          collisionMask:
+            serializedVersion: 2
+            m_Bits: 4294967291
     serializedBakingSets:
     - name: Default
       sceneGUIDs:
       - 00000000000000000000000000000000
       - 3d2f35f9e354913459c4a1752b0620a0
+      - ca3dffc638722ea4e80f42cc78f9b71b
       settings:
         m_Version: 1
         dilationSettings:
