@@ -234,4 +234,3 @@ gh issue create --repo $REPO --title "Release Preparation" --milestone $M5 --bod
 "
 
 echo "All Milestones and Issues Created."
-
