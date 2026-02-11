@@ -208,8 +208,8 @@ MonoBehaviour:
     m_OverrideState: 1
     m_Value: 0.95
   rounded:
-    m_OverrideState: 1
-    m_Value: 1
+    m_OverrideState: 0
+    m_Value: 0
   mask:
     m_OverrideState: 0
     m_Value: {fileID: 0}
@@ -586,14 +586,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.RenderPipelines.HighDefinition.Runtime::UnityEngine.Rendering.HighDefinition.FilmGrain
   active: 1
   type:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: 4
   intensity:
-    m_OverrideState: 0
-    m_Value: 0
+    m_OverrideState: 1
+    m_Value: 1
   response:
     m_OverrideState: 0
-    m_Value: 0.8
+    m_Value: 0
   texture:
     m_OverrideState: 0
     m_Value: {fileID: 0}
