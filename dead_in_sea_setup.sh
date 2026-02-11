@@ -2,235 +2,122 @@
 
 REPO="BrightestShade/TurnBasedBattle"
 
-echo "Creating Milestones..."
+# Milestone Names
+M1="Milestone 1 - Core Prototype"
+M2="Milestone 2 - Vertical Slice"
+M3="Milestone 3 - Art & Atmosphere"
+M4="Milestone 4 - Polish & Optimization"
+M5="Milestone 5 - Release Build"
 
-gh api repos/$REPO/milestones -f title="Milestone 1 - Core Prototype"
-gh api repos/$REPO/milestones -f title="Milestone 2 - Vertical Slice"
-gh api repos/$REPO/milestones -f title="Milestone 3 - Art & Atmosphere"
-gh api repos/$REPO/milestones -f title="Milestone 4 - Polish & Optimization"
-gh api repos/$REPO/milestones -f title="Milestone 5 - Release Build"
+echo "🚀 Creating Issues with Progress Bar Checklists for $REPO..."
 
-echo "Fetching milestone numbers..."
+# --- MILESTONE 1 ---
+gh issue create --repo $REPO --title "Player Controller" --milestone "$M1" --body "### Tasks
+- [ ] Walk & Sprint Logic
+- [ ] Crouch & Jump Mechanics
+- [ ] Head Bobbing Effect
+- [ ] Bodycam View System
+- [ ] Camera Noise & Distortion
+- [ ] Movement Polish & Friction
+- [ ] Player State Machine
+- [ ] Basic Animation Setup"
 
-M1=$(gh api repos/$REPO/milestones | jq '.[] | select(.title=="Milestone 1 - Core Prototype") | .number')
-M2=$(gh api repos/$REPO/milestones | jq '.[] | select(.title=="Milestone 2 - Vertical Slice") | .number')
-M3=$(gh api repos/$REPO/milestones | jq '.[] | select(.title=="Milestone 3 - Art & Atmosphere") | .number')
-M4=$(gh api repos/$REPO/milestones | jq '.[] | select(.title=="Milestone 4 - Polish & Optimization") | .number')
-M5=$(gh api repos/$REPO/milestones | jq '.[] | select(.title=="Milestone 5 - Release Build") | .number')
+gh issue create --repo $REPO --title "Interaction System" --milestone "$M1" --body "### Tasks
+- [ ] Raycast Detection Logic
+- [ ] Door Open/Close Mechanics
+- [ ] Drawer & Cabinet Interaction
+- [ ] Valve Rotation System
+- [ ] Item Pickup (Gun/Keycards)
+- [ ] Contextual UI Prompts
+- [ ] Audio Triggers for Objects
+- [ ] Interaction Haptic Feedback"
 
-echo "Creating Issues..."
+gh issue create --repo $REPO --title "Zombie AI (Basic)" --milestone "$M1" --body "### Tasks
+- [ ] Patrol Pathing
+- [ ] Vision/Chase Logic
+- [ ] Attack Range & Timers
+- [ ] Door Blocking Behavior
+- [ ] NavMesh Integration
+- [ ] Basic Animation Blend Tree
+- [ ] Damage Detection
+- [ ] Death States"
 
-# Milestone 1
-gh issue create --repo $REPO --title "Player Controller" --milestone $M1 --body "
-- [ ] Walk
-- [ ] Sprint
-- [ ] Crouch
-- [ ] Jump
-- [ ] Head Bob
-- [ ] Bodycam System
-- [ ] Camera Noise Effects
-- [ ] Movement Polish
-- [ ] Player States
-- [ ] Basic Animation Setup
-"
+gh issue create --repo $REPO --title "Pipe Puzzle System" --milestone "$M1" --body "### Tasks
+- [ ] Valve Rotation Math
+- [ ] Pressure Gauge Logic
+- [ ] Gas Leak VFX
+- [ ] Screen Blur/Coughing Effect
+- [ ] Heartbeat Sound Escalation
+- [ ] Puzzle Timer System
+- [ ] Door Unlock Condition
+- [ ] Death/Failure State"
 
-gh issue create --repo $REPO --title "Interaction System" --milestone $M1 --body "
-- [ ] Raycast Interaction
-- [ ] Door Open/Close
-- [ ] Drawer Interaction
-- [ ] Valve Rotation
-- [ ] Gun Pickup
-- [ ] Keycard Pickup
-- [ ] Context UI Prompt
-- [ ] Sound Trigger
-- [ ] Interaction Feedback
-- [ ] Lock System
-"
+gh issue create --repo $REPO --title "Death System" --milestone "$M1" --body "### Tasks
+- [ ] Zombie Kill Cam
+- [ ] Gas Suffocation Death
+- [ ] 'Signal Lost' UI Screen
+- [ ] Jump Scare Camera Snap
+- [ ] Scene Reset Logic
+- [ ] Audio Fade-out
+- [ ] Checkpoint Reloading
+- [ ] Death VFX"
 
-gh issue create --repo $REPO --title "Zombie AI (Basic)" --milestone $M1 --body "
-- [ ] Patrol Behavior
-- [ ] Chase Behavior
-- [ ] Attack Logic
-- [ ] Door Blocking
-- [ ] NavMesh Setup
-- [ ] Basic Animation
-- [ ] Sound Triggers
-- [ ] Damage Player
-- [ ] Death Trigger
-- [ ] Basic Optimization
-"
+# --- MILESTONE 2 ---
+gh issue create --repo $REPO --title "Checkpoint System" --milestone "$M2" --body "### Tasks
+- [ ] Checkpoint Trigger Boxes
+- [ ] Save Player Transform
+- [ ] Save Puzzle Completion State
+- [ ] Persistent Door States
+- [ ] Enemy Position Reset
+- [ ] Loading Screen UI
+- [ ] Soft-lock Prevention Logic"
 
-gh issue create --repo $REPO --title "Pipe Puzzle System" --milestone $M1 --body "
-- [ ] Valve Rotation Logic
-- [ ] Pressure System
-- [ ] Wrong Valve Penalty
-- [ ] Gas System
-- [ ] Vision Blur Effect
-- [ ] Heartbeat Effect
-- [ ] Timer System
-- [ ] Door Unlock Trigger
-- [ ] Reset Logic
-- [ ] Death Condition
-"
+gh issue create --repo $REPO --title "Gun System" --milestone "$M2" --body "### Tasks
+- [ ] Inventory Slot Setup
+- [ ] Limited Ammo Counter
+- [ ] Shooting Raycast/Projectile
+- [ ] Recoil & Kickback VFX
+- [ ] Empty Click Sound
+- [ ] Muzzle Flash Sprite
+- [ ] Zombie Impact Reactions"
 
-gh issue create --repo $REPO --title "Death System" --milestone $M1 --body "
-- [ ] Zombie Death
-- [ ] Gas Death
-- [ ] Signal Lost Screen
-- [ ] Jump Scare Trigger
-- [ ] Scene Reset
-- [ ] Audio Fade
-- [ ] Visual Effects
-- [ ] Player Disable
-- [ ] Checkpoint Reload
-- [ ] Basic Polish
-"
+gh issue create --repo $REPO --title "Control Room Logic" --milestone "$M2" --body "### Tasks
+- [ ] Event Trigger Sequences
+- [ ] Panic Timer Setup
+- [ ] Keycard Spawn Logic
+- [ ] Drawer Loot Probability
+- [ ] Security Camera Monitor VFX
+- [ ] Escape Route Unlock"
 
-# Milestone 2
-gh issue create --repo $REPO --title "Checkpoint System" --milestone $M2 --body "
-- [ ] Define Checkpoints
-- [ ] Save Player Position
-- [ ] Save Puzzle State
-- [ ] Save Door States
-- [ ] Reset Enemies
-- [ ] Reload Scene Section
-- [ ] Prevent Soft Locks
-- [ ] Trigger System
-- [ ] Debug Mode
-- [ ] Testing
-"
+# --- MILESTONE 3 ---
+gh issue create --repo $REPO --title "Lighting & Atmosphere" --milestone "$M3" --body "### Tasks
+- [ ] Volumetric Fog Setup
+- [ ] Flickering Light Scripts
+- [ ] Post-Processing Profile
+- [ ] Blood Spatter Decals
+- [ ] Shadow Performance Tuning
+- [ ] Darkness/Stealth Balancing"
 
-gh issue create --repo $REPO --title "Cutscene System" --milestone $M2 --body "
-- [ ] Bodycam Wake Scene
-- [ ] Zombie First Reveal
-- [ ] Control Room Entry
-- [ ] Security Camera Scene
-- [ ] Final Escape Scene
-- [ ] Camera Switching
-- [ ] Player Lock Control
-- [ ] Audio Sync
-- [ ] Animation Triggers
-- [ ] Skip Option
-"
+gh issue create --repo $REPO --title "Animation System" --milestone "$M3" --body "### Tasks
+- [ ] Zombie Walk/Attack Cycle
+- [ ] FPS Hand Animations
+- [ ] Weapon Reload/Shoot
+- [ ] Environmental Animations (Pipes/Doors)
+- [ ] Camera Shake Profiles"
 
-gh issue create --repo $REPO --title "Gun System" --milestone $M2 --body "
-- [ ] Gun Pickup
-- [ ] Limited Ammo
-- [ ] Shooting Mechanic
-- [ ] Recoil
-- [ ] No Ammo Click
-- [ ] Bullet Impact
-- [ ] Zombie Damage
-- [ ] Sound Effects
-- [ ] Muzzle Flash
-- [ ] Disable After Ammo
-"
-
-gh issue create --repo $REPO --title "Control Room Logic" --milestone $M2 --body "
-- [ ] Zombie Spawn Timing
-- [ ] Gun Panic Timer
-- [ ] Keycard Spawn
-- [ ] Drawer Search Logic
-- [ ] Door Lock
-- [ ] Pipe Blocked Entrance
-- [ ] Security Camera Trigger
-- [ ] Dead Body Interaction
-- [ ] Escape Unlock
-- [ ] Reset Logic
-"
-
-gh issue create --repo $REPO --title "Audio System" --milestone $M2 --body "
-- [ ] Submarine Engine Loop
-- [ ] Footsteps
-- [ ] Zombie Sounds
-- [ ] Door Sounds
-- [ ] Gun Sounds
-- [ ] Gas Leak
-- [ ] Heartbeat
-- [ ] Ambient Tension
-- [ ] Audio Mixer Setup
-- [ ] Audio Optimization
-"
-
-# Milestone 3
-gh issue create --repo $REPO --title "3D Asset Production" --milestone $M3 --body "
-- [ ] Submarine Corridor
-- [ ] Control Room
-- [ ] Pipe Room
-- [ ] Doors
-- [ ] Valves
-- [ ] Drawers
-- [ ] Zombie Model
-- [ ] Player Hands
-- [ ] Gun Model
-- [ ] Texturing
-"
-
-gh issue create --repo $REPO --title "Lighting & Atmosphere" --milestone $M3 --body "
-- [ ] Low Light Setup
-- [ ] Flicker Effects
-- [ ] Volumetric Fog
-- [ ] Post Processing
-- [ ] Blood Effects
-- [ ] Camera Noise
-- [ ] Shadow Optimization
-- [ ] Color Grading
-- [ ] Darkness Balancing
-- [ ] Performance Check
-"
-
-gh issue create --repo $REPO --title "Animation System" --milestone $M3 --body "
-- [ ] Zombie Walk
-- [ ] Zombie Attack
-- [ ] Player Hands
-- [ ] Gun Animations
-- [ ] Death Animations
-- [ ] Cutscene Animations
-- [ ] Idle Movements
-- [ ] Camera Shake
-- [ ] Transitions
-- [ ] Polish
-"
-
-# Milestone 4
-gh issue create --repo $REPO --title "Optimization" --milestone $M4 --body "
-- [ ] FPS Testing
-- [ ] Light Baking
-- [ ] LOD Setup
+# --- MILESTONE 4 & 5 (Simplified for Speed) ---
+gh issue create --repo $REPO --title "Optimization & Polish" --milestone "$M4" --body "### Tasks
 - [ ] Occlusion Culling
 - [ ] Texture Compression
-- [ ] Audio Compression
-- [ ] Memory Testing
-- [ ] Build Testing
-- [ ] Bug Fixing
-- [ ] Stability Check
-"
+- [ ] Audio Mixing & Compression
+- [ ] Memory Usage Audit
+- [ ] Bug Hunting Phase"
 
-gh issue create --repo $REPO --title "Game Balancing" --milestone $M4 --body "
-- [ ] Puzzle Difficulty
-- [ ] Ammo Balance
-- [ ] Zombie Speed
-- [ ] Gas Timing
-- [ ] Checkpoint Placement
-- [ ] Death Timing
-- [ ] Audio Levels
-- [ ] Jump Scare Timing
-- [ ] Player Feedback
-- [ ] Final Testing
-"
+gh issue create --repo $REPO --title "Release Prep" --milestone "$M5" --body "### Tasks
+- [ ] Final Build Export
+- [ ] Gameplay Trailer Capture
+- [ ] Storefront Assets (Icons/Screenshots)
+- [ ] Demo Build Polish
+- [ ] Version Tagging (v1.0)"
 
-# Milestone 5
-gh issue create --repo $REPO --title "Release Preparation" --milestone $M5 --body "
-- [ ] Final Build
-- [ ] Playtesting
-- [ ] Trailer Capture
-- [ ] Store Assets
-- [ ] Screenshots
-- [ ] Description Writing
-- [ ] Demo Build
-- [ ] Bug Sweep
-- [ ] Version Tagging
-- [ ] Publish
-"
-
-echo "All Milestones and Issues Created."
+echo "✅ All detailed issues created! Check the [Issues tab](https://github.com) to see the progress bars."
