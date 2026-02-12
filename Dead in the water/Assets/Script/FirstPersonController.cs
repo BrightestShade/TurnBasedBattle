@@ -4,6 +4,7 @@
 //
 // "Enable/Disable Headbob, Changed look rotations - should result in reduced camera jitters" || version 1.0.1
 // "Converted to new Input System" || version 1.0.2
+// "Added Vault System, Fixed crouch walkSpeed drift, Fixed sprint cooldown variable conflict, Improved ground check" || version 1.0.3
 
 using System.Collections;
 using System.Collections.Generic;
@@ -62,8 +63,9 @@ public class FirstPersonController : MonoBehaviour
 
     // Internal Variables
     public bool IsWalking { get; private set; }
+    private float baseWalkSpeed; // FIX: Store original walk speed to prevent float drift
 
-    // Public properties for state machine
+    // Public properties for external access
     public bool IsGrounded { get { return isGrounded; } }
     public bool IsSprinting { get { return isSprinting; } }
     public bool IsCrouched { get { return isCrouched; } }
@@ -96,6 +98,7 @@ public class FirstPersonController : MonoBehaviour
     private float sprintBarHeight;
     private bool isSprintCooldown = false;
     private float sprintCooldownReset;
+    private float sprintCooldownTimer; // FIX: Separate timer so we don't overwrite the inspector value
 
     #endregion
 
@@ -105,7 +108,7 @@ public class FirstPersonController : MonoBehaviour
     public float jumpPower = 5f;
 
     // Internal Variables
-    public bool isGrounded;
+    private bool isGrounded; // FIX: Made private — use IsGrounded property externally
 
     #endregion
 
@@ -136,6 +139,40 @@ public class FirstPersonController : MonoBehaviour
 
     #endregion
 
+    #region Vault Variables
+
+    public bool enableVault = true;
+    public float maxVaultHeight = 1.1f;
+    public float vaultDuration = 0.4f;
+    public float vaultDetectionRange = 1.0f;
+    public LayerMask vaultableLayer;
+    // In the Vault Variables region, change this line:
+    [Tooltip("Height from player feet where the forward ray is cast (0-1 percentage of player height)")]
+    public float vaultRayOriginHeight = 0.5f; // 50% = chest height
+
+    [Tooltip("Height above obstacle to cast downward ray from")]
+    public float vaultTopCheckHeight = 1.5f;
+    [Tooltip("How far past the obstacle to check for a landing spot")]
+    public float vaultLandingCheckDepth = 1.0f;
+
+    // Internal Variables
+    private bool isVaulting = false;
+    public bool IsVaulting { get { return isVaulting; } }
+
+    #endregion
+
+    #region Ground Check Variables
+
+    [Header("Ground Check")]
+    public float groundCheckRadius = 0.3f;
+    public float groundCheckExtraDistance = 0.1f; // how far below the collider bottom to check
+    public LayerMask groundLayer = ~0; // Everything by default
+
+    // Internal
+    private CapsuleCollider playerCollider;
+
+    #endregion
+
     // New Input System
     public PlayerInput playerInput { get; private set; }
     private InputAction lookAction;
@@ -145,7 +182,7 @@ public class FirstPersonController : MonoBehaviour
     private InputAction jumpAction;
     private InputAction crouchAction;
 
-    // Public methods for state machine to access input
+    // Public methods for external input access
     public Vector2 GetMoveInput() => moveAction.ReadValue<Vector2>();
     public Vector2 GetLookInput() => lookAction.ReadValue<Vector2>();
     public bool GetSprintInput() => sprintAction.IsPressed();
@@ -155,6 +192,7 @@ public class FirstPersonController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        playerCollider = GetComponent<CapsuleCollider>();
         crosshairObject = GetComponentInChildren<Image>();
 
         // Initialize new Input System
@@ -173,6 +211,7 @@ public class FirstPersonController : MonoBehaviour
         playerCamera.fieldOfView = fov;
         originalScale = transform.localScale;
         jointOriginalPos = joint.localPosition;
+        baseWalkSpeed = walkSpeed; // FIX: Store original walk speed
 
         if (!unlimitedSprint)
         {
@@ -234,6 +273,9 @@ public class FirstPersonController : MonoBehaviour
 
     private void Update()
     {
+        // Block all input during vault
+        if (isVaulting) return;
+
         #region Camera
 
         // Control camera movement
@@ -319,22 +361,22 @@ public class FirstPersonController : MonoBehaviour
                 sprintRemaining = Mathf.Clamp(sprintRemaining += 1 * Time.deltaTime, 0, sprintDuration);
             }
 
-            // Handles sprint cooldown 
-            // When sprint remaining == 0 stops sprint ability until hitting cooldown
+            // Handles sprint cooldown
+            // FIX: Uses separate timer variable so inspector value isn't overwritten
             if (isSprintCooldown)
             {
-                sprintCooldown -= 1 * Time.deltaTime;
-                if (sprintCooldown <= 0)
+                sprintCooldownTimer -= 1 * Time.deltaTime;
+                if (sprintCooldownTimer <= 0)
                 {
                     isSprintCooldown = false;
                 }
             }
             else
             {
-                sprintCooldown = sprintCooldownReset;
+                sprintCooldownTimer = sprintCooldown;
             }
 
-            // Handles sprintBar 
+            // Handles sprintBar
             if (useSprintBar && !unlimitedSprint)
             {
                 float sprintRemainingPercent = sprintRemaining / sprintDuration;
@@ -344,12 +386,19 @@ public class FirstPersonController : MonoBehaviour
 
         #endregion
 
-        #region Jump
+        #region Jump & Vault
 
-        // Gets input and calls jump method
         if (enableJump && jumpAction.WasPressedThisFrame() && isGrounded)
         {
-            Jump();
+            // Try vault FIRST — if a vaultable obstacle is found, vault instead of jumping
+            if (enableVault && TryVault())
+            {
+                // Vaulting! Skip the jump.
+            }
+            else
+            {
+                Jump();
+            }
         }
 
         #endregion
@@ -390,6 +439,9 @@ public class FirstPersonController : MonoBehaviour
     void FixedUpdate()
     {
         #region Movement
+
+        // Block movement during vault
+        if (isVaulting) return;
 
         if (playerCanMove)
         {
@@ -467,16 +519,24 @@ public class FirstPersonController : MonoBehaviour
         #endregion
     }
 
-    // Sets isGrounded based on a raycast sent straight down from the player object
+    // FIX: Improved ground check using SphereCast — more reliable on edges and slopes
+    // FIX: Ground check now starts from the actual bottom of the CapsuleCollider
     private void CheckGround()
     {
-        Vector3 origin = new Vector3(transform.position.x, transform.position.y - (transform.localScale.y * .5f), transform.position.z);
-        Vector3 direction = transform.TransformDirection(Vector3.down);
-        float distance = .75f;
+        // Calculate the true bottom of the capsule collider in world space
+        // collider.center is in local space, so we transform it
+        Vector3 colliderCenter = transform.TransformPoint(playerCollider.center);
+        float colliderHalfHeight = (playerCollider.height * transform.localScale.y) / 2f;
+        float scaledRadius = playerCollider.radius * Mathf.Max(transform.localScale.x, transform.localScale.z);
 
-        if (Physics.Raycast(origin, direction, out RaycastHit hit, distance))
+        // SphereCast origin = bottom of the capsule sphere (not the very bottom point, but the center of the bottom sphere)
+        Vector3 origin = colliderCenter - Vector3.up * (colliderHalfHeight - scaledRadius);
+
+        // Cast downward from the bottom sphere of the capsule
+        float castDistance = scaledRadius + groundCheckExtraDistance;
+
+        if (Physics.SphereCast(origin, groundCheckRadius, Vector3.down, out RaycastHit hit, castDistance, groundLayer))
         {
-            Debug.DrawRay(origin, direction * distance, Color.red);
             isGrounded = true;
         }
         else
@@ -501,23 +561,22 @@ public class FirstPersonController : MonoBehaviour
         }
     }
 
+    // FIX: Crouch no longer multiplies/divides walkSpeed directly — uses baseWalkSpeed instead
     public void Crouch()
     {
         // Stands player up to full height
-        // Brings walkSpeed back up to original speed
         if (isCrouched)
         {
             transform.localScale = new Vector3(originalScale.x, originalScale.y, originalScale.z);
-            walkSpeed /= speedReduction;
+            walkSpeed = baseWalkSpeed; // FIX: Restore exact original speed
 
             isCrouched = false;
         }
         // Crouches player down to set height
-        // Reduces walkSpeed
         else
         {
             transform.localScale = new Vector3(originalScale.x, crouchHeight, originalScale.z);
-            walkSpeed *= speedReduction;
+            walkSpeed = baseWalkSpeed * speedReduction; // FIX: Always calculate from base
 
             isCrouched = true;
         }
@@ -552,6 +611,218 @@ public class FirstPersonController : MonoBehaviour
             joint.localPosition = new Vector3(Mathf.Lerp(joint.localPosition.x, jointOriginalPos.x, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.y, jointOriginalPos.y, Time.deltaTime * bobSpeed), Mathf.Lerp(joint.localPosition.z, jointOriginalPos.z, Time.deltaTime * bobSpeed));
         }
     }
+
+    #region Vault System
+
+    /// <summary>
+    /// Attempts to vault over an obstacle in front of the player.
+    /// Returns true if a vault was started, false if no valid vault target was found.
+    /// </summary>
+    private bool TryVault()
+    {
+        if (isVaulting) return false;
+        if (isCrouched) return false;
+
+        // === STEP 1: Forward ray from chest height — is there an obstacle? ===
+        // Use the collider to find proper chest height instead of a fixed offset
+        float playerHeight = playerCollider.height * transform.localScale.y;
+        float feetY = transform.position.y - (playerHeight / 2f) + playerCollider.center.y * transform.localScale.y;
+        float rayHeight = feetY + (playerHeight * vaultRayOriginHeight); // vaultRayOriginHeight is now a 0-1 percentage of player height
+
+        Vector3 rayOrigin = new Vector3(transform.position.x, rayHeight, transform.position.z);
+        Vector3 forward = transform.forward;
+
+        Debug.DrawRay(rayOrigin, forward * vaultDetectionRange, Color.yellow, 2f);
+
+        if (!Physics.Raycast(rayOrigin, forward, out RaycastHit forwardHit, vaultDetectionRange, vaultableLayer))
+        {
+            Debug.Log("[Vault] STEP 1 FAILED — No obstacle detected. Check: Is the obstacle on the 'Vaultable' layer? Is Detection Range long enough?");
+            return false;
+        }
+        Debug.Log($"[Vault] STEP 1 PASSED — Hit: {forwardHit.collider.name} at distance {forwardHit.distance:F2}");
+
+        // === STEP 2: Find the top of the obstacle ===
+        Vector3 topRayOrigin = forwardHit.point + forward * 0.1f + Vector3.up * vaultTopCheckHeight;
+
+        Debug.DrawRay(topRayOrigin, Vector3.down * (vaultTopCheckHeight + 1f), Color.cyan, 2f);
+
+        if (!Physics.Raycast(topRayOrigin, Vector3.down, out RaycastHit topHit, vaultTopCheckHeight + 1f, vaultableLayer))
+        {
+            Debug.Log("[Vault] STEP 2 FAILED — Can't find top of obstacle. Try increasing Top Check Height.");
+            return false;
+        }
+        Debug.Log($"[Vault] STEP 2 PASSED — Obstacle top at Y: {topHit.point.y:F2}");
+
+        // === STEP 3: Validate vault height ===
+        float obstacleTopY = topHit.point.y;
+        float vaultHeight = obstacleTopY - feetY;
+
+        if (vaultHeight <= 0.1f)
+        {
+            Debug.Log($"[Vault] STEP 3 FAILED — Obstacle too short ({vaultHeight:F2}m). Step over it instead.");
+            return false;
+        }
+        if (vaultHeight > maxVaultHeight)
+        {
+            Debug.Log($"[Vault] STEP 3 FAILED — Obstacle too tall ({vaultHeight:F2}m). Max is {maxVaultHeight}m.");
+            return false;
+        }
+        Debug.Log($"[Vault] STEP 3 PASSED — Vault height: {vaultHeight:F2}m (max: {maxVaultHeight}m)");
+
+        // === STEP 4: Check if there's room to land on the other side ===
+        Vector3 landingCheckOrigin = topHit.point + forward * vaultLandingCheckDepth + Vector3.up * 2f;
+
+        Debug.DrawRay(landingCheckOrigin, Vector3.down * 5f, Color.magenta, 2f);
+
+        if (!Physics.Raycast(landingCheckOrigin, Vector3.down, out RaycastHit landingHit, 5f))
+        {
+            Debug.Log("[Vault] STEP 4 FAILED — No ground on the other side to land on.");
+            return false;
+        }
+        Debug.Log($"[Vault] STEP 4 PASSED — Landing at Y: {landingHit.point.y:F2}");
+
+        // === STEP 5: Calculate landing position ===
+        // FIX: Offset by half player height so feet land on the ground, not the player center
+        float halfHeight = playerHeight / 2f;
+        Vector3 landingPosition = landingHit.point + Vector3.up * (halfHeight + 0.05f);
+
+        // === STEP 6: Check for walls/obstacles blocking the vault path ===
+        // FIX: Prevent vaulting through walls at corners
+        Vector3 peakPosition = new Vector3(
+            (transform.position.x + landingPosition.x) / 2f,
+            obstacleTopY + halfHeight + 0.2f, // peak must clear obstacle + player height
+            (transform.position.z + landingPosition.z) / 2f
+        );
+
+        // Check from start to peak
+        Vector3 startToPeak = peakPosition - transform.position;
+        if (Physics.Raycast(transform.position, startToPeak.normalized, startToPeak.magnitude, groundLayer & ~vaultableLayer))
+        {
+            Debug.Log("[Vault] STEP 6 FAILED — Wall blocking vault path (start to peak).");
+            return false;
+        }
+
+        // Check from peak to landing
+        Vector3 peakToLanding = landingPosition - peakPosition;
+        if (Physics.Raycast(peakPosition, peakToLanding.normalized, peakToLanding.magnitude, groundLayer & ~vaultableLayer))
+        {
+            Debug.Log("[Vault] STEP 6 FAILED — Wall blocking vault path (peak to landing).");
+            return false;
+        }
+
+        // Also check with a SphereCast for the player's width
+        float playerRadius = playerCollider.radius * Mathf.Max(transform.localScale.x, transform.localScale.z);
+        if (Physics.SphereCast(peakPosition, playerRadius, peakToLanding.normalized, out _, peakToLanding.magnitude, groundLayer & ~vaultableLayer))
+        {
+            Debug.Log("[Vault] STEP 6 FAILED — Not enough clearance on vault path.");
+            return false;
+        }
+
+        Debug.Log($"[Vault] STEP 6 PASSED — Vault path is clear.");
+
+        // === STEP 7: Start the vault! ===
+        Debug.Log("[Vault] ALL CHECKS PASSED — Vaulting!");
+        StartCoroutine(VaultCoroutine(peakPosition, landingPosition));
+        return true;
+    }
+
+    private IEnumerator VaultCoroutine(Vector3 peakPosition, Vector3 landingPosition)
+    {
+        isVaulting = true;
+
+        // Disable physics during vault
+        rb.isKinematic = true;
+
+        Vector3 startPosition = transform.position;
+
+        float halfDuration = vaultDuration / 2f;
+
+        // --- Phase 1: Move UP to peak ---
+        float elapsed = 0f;
+        while (elapsed < halfDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / halfDuration);
+            transform.position = Vector3.Lerp(startPosition, peakPosition, t);
+            yield return null;
+        }
+        transform.position = peakPosition;
+
+        // --- Phase 2: Move DOWN to landing ---
+        elapsed = 0f;
+        while (elapsed < halfDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / halfDuration);
+            transform.position = Vector3.Lerp(peakPosition, landingPosition, t);
+            yield return null;
+        }
+        transform.position = landingPosition;
+
+        // Re-enable physics
+        rb.isKinematic = false;
+        rb.linearVelocity = Vector3.zero;
+
+        isVaulting = false;
+    }
+
+    #endregion
+
+    #region Debug Gizmos
+
+    private void OnDrawGizmosSelected()
+    {
+        // === Ground Check Gizmo ===
+        CapsuleCollider col = GetComponent<CapsuleCollider>();
+        if (col != null)
+        {
+            Vector3 colliderCenter = transform.TransformPoint(col.center);
+            float colliderHalfHeight = (col.height * transform.localScale.y) / 2f;
+            float scaledRadius = col.radius * Mathf.Max(transform.localScale.x, transform.localScale.z);
+            Vector3 origin = colliderCenter - Vector3.up * (colliderHalfHeight - scaledRadius);
+
+            // SphereCast end position (solid green)
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(origin + Vector3.down * (scaledRadius + groundCheckExtraDistance), groundCheckRadius);
+
+            // SphereCast start position (faded green) — inside the character
+            Gizmos.color = new Color(0f, 1f, 0f, 0.5f);
+            Gizmos.DrawSphere(origin, groundCheckRadius);
+
+            // Line connecting both for clarity
+            Gizmos.color = Color.green;
+            Gizmos.DrawLine(origin, origin + Vector3.down * (scaledRadius + groundCheckExtraDistance));
+        }
+
+        // === Vault Gizmos ===
+        if (enableVault && col != null)
+        {
+            float playerHeight = col.height * transform.localScale.y;
+            float feetY = transform.position.y - (playerHeight / 2f) + col.center.y * transform.localScale.y;
+            float rayHeight = feetY + (playerHeight * vaultRayOriginHeight);
+
+            Vector3 vaultRayOriginPos = new Vector3(transform.position.x, rayHeight, transform.position.z);
+
+            // Forward detection ray (yellow) — this is what looks for obstacles
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(vaultRayOriginPos, vaultRayOriginPos + transform.forward * vaultDetectionRange);
+            Gizmos.DrawSphere(vaultRayOriginPos, 0.05f); // small sphere at ray origin
+
+            // Max vault height line (red)
+            Gizmos.color = Color.red;
+            Vector3 maxHeightPos = new Vector3(transform.position.x, feetY + maxVaultHeight, transform.position.z);
+            Gizmos.DrawWireCube(maxHeightPos + transform.forward * 0.5f, new Vector3(0.5f, 0.05f, 0.5f));
+
+            // Feet level (blue) — reference line
+            Gizmos.color = Color.blue;
+            Gizmos.DrawLine(
+                new Vector3(transform.position.x - 0.3f, feetY, transform.position.z),
+                new Vector3(transform.position.x + 0.3f, feetY, transform.position.z)
+            );
+        }
+    }
+
+    #endregion
 }
 
 // Custom Editor
@@ -575,7 +846,7 @@ public class FirstPersonControllerEditor : Editor
         EditorGUILayout.Space();
         GUILayout.Label("Modular First Person Controller", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 16 });
         GUILayout.Label("By Jess Case", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
-        GUILayout.Label("version 1.0.2", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
+        GUILayout.Label("version 1.0.3", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Normal, fontSize = 12 });
         EditorGUILayout.Space();
 
         #region Camera Setup
@@ -725,6 +996,32 @@ public class FirstPersonControllerEditor : Editor
 
         #endregion
 
+        #region Vault
+
+        EditorGUILayout.Space();
+
+        GUILayout.Label("Vault", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleLeft, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
+
+        fpc.enableVault = EditorGUILayout.ToggleLeft(new GUIContent("Enable Vault", "Determines if the player can vault over obstacles."), fpc.enableVault);
+
+        GUI.enabled = fpc.enableVault;
+        fpc.maxVaultHeight = EditorGUILayout.Slider(new GUIContent("Max Vault Height", "Maximum height of obstacle the player can vault over."), fpc.maxVaultHeight, 0.3f, 2f);
+        fpc.vaultDuration = EditorGUILayout.Slider(new GUIContent("Vault Duration", "How long the vault takes in seconds. Lower = snappier."), fpc.vaultDuration, 0.1f, 1f);
+        fpc.vaultDetectionRange = EditorGUILayout.Slider(new GUIContent("Detection Range", "How far in front the player checks for vaultable obstacles."), fpc.vaultDetectionRange, 0.5f, 3f);
+        fpc.vaultRayOriginHeight = EditorGUILayout.Slider(new GUIContent("Ray Height (%)", "Where the detection ray starts as a percentage of player height. 0.5 = chest height."), fpc.vaultRayOriginHeight, 0.1f, 0.9f);
+        fpc.vaultTopCheckHeight = EditorGUILayout.Slider(new GUIContent("Top Check Height", "Height above hit point to cast downward ray for finding obstacle top."), fpc.vaultTopCheckHeight, 1f, 3f);
+        fpc.vaultLandingCheckDepth = EditorGUILayout.Slider(new GUIContent("Landing Check Depth", "How far past the obstacle to check for valid landing ground."), fpc.vaultLandingCheckDepth, 0.5f, 3f);
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.PrefixLabel(new GUIContent("Vaultable Layer", "Layer mask for objects that can be vaulted over."));
+        fpc.vaultableLayer = EditorGUILayout.MaskField(UnityEditorInternal.InternalEditorUtility.LayerMaskToConcatenatedLayersMask(fpc.vaultableLayer), UnityEditorInternal.InternalEditorUtility.layers);
+        fpc.vaultableLayer = UnityEditorInternal.InternalEditorUtility.ConcatenatedLayersMaskToLayerMask(fpc.vaultableLayer);
+        EditorGUILayout.EndHorizontal();
+
+        GUI.enabled = true;
+
+        #endregion
+
         #endregion
 
         #region Head Bob
@@ -741,6 +1038,20 @@ public class FirstPersonControllerEditor : Editor
         fpc.bobSpeed = EditorGUILayout.Slider(new GUIContent("Speed", "Determines how often a bob rotation is completed."), fpc.bobSpeed, 1, 20);
         fpc.bobAmount = EditorGUILayout.Vector3Field(new GUIContent("Bob Amount", "Determines the amount the joint moves in both directions on every axes."), fpc.bobAmount);
         GUI.enabled = true;
+
+        #endregion
+
+        #region Ground Check
+
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+        GUILayout.Label("Ground Check", new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold, fontSize = 13 }, GUILayout.ExpandWidth(true));
+        EditorGUILayout.Space();
+
+        fpc.groundCheckRadius = EditorGUILayout.Slider(new GUIContent("Check Radius", "Radius of the SphereCast used for ground detection."), fpc.groundCheckRadius, 0.1f, 0.5f);
+        fpc.groundCheckExtraDistance = EditorGUILayout.Slider(new GUIContent("Extra Distance", "How far below the collider bottom to check for ground."), fpc.groundCheckExtraDistance, 0.05f, 0.5f);
+        fpc.groundLayer = EditorGUILayout.MaskField(new GUIContent("Ground Layer", "Which layers count as ground."), UnityEditorInternal.InternalEditorUtility.LayerMaskToConcatenatedLayersMask(fpc.groundLayer), UnityEditorInternal.InternalEditorUtility.layers);
+        fpc.groundLayer = UnityEditorInternal.InternalEditorUtility.ConcatenatedLayersMaskToLayerMask(fpc.groundLayer);
 
         #endregion
 
