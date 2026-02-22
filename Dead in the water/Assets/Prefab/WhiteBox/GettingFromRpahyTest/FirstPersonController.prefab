@@ -75,7 +75,7 @@ Transform:
   m_GameObject: {fileID: 423484270351421202}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.75, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -169,8 +169,9 @@ GameObject:
   - component: {fileID: 7225452371806030214}
   - component: {fileID: 7264648974407973195}
   - component: {fileID: 7657556445497844595}
+  - component: {fileID: 4469552767649378791}
   - component: {fileID: 7522343059036594958}
-  - component: {fileID: 8817980043613490018}
+  - component: {fileID: 673382889151638631}
   m_Layer: 0
   m_Name: FirstPersonController
   m_TagString: Player
@@ -227,7 +228,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: f5314a781ddff9049b4bed594ae306f2, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -258,7 +259,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1196708342303727873}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 2a23498849de42c40a7f83990ccee830, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -274,6 +275,73 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &4469552767649378791
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196708342303727873}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d060faf0b3c7e84db4b474601e9912a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FirstPersonController
+  playerCamera: {fileID: 185008832173987186}
+  fov: 60
+  invertCamera: 0
+  cameraCanMove: 1
+  mouseSensitivity: 5
+  maxLookAngle: 50
+  lockCursor: 1
+  crosshair: 1
+  crosshairImage: {fileID: 21300000, guid: be4ce60e2c9768c44b9b10b9c5258045, type: 3}
+  crosshairColor: {r: 1, g: 1, b: 1, a: 1}
+  enableZoom: 1
+  holdToZoom: 0
+  zoomFOV: 30
+  zoomStepTime: 5
+  playerCanMove: 1
+  walkSpeed: 5
+  maxVelocityChange: 10
+  enableSprint: 1
+  unlimitedSprint: 0
+  sprintSpeed: 7
+  sprintDuration: 5
+  sprintCooldown: 0.5
+  sprintFOV: 80
+  sprintFOVStepTime: 10
+  useSprintBar: 1
+  hideBarWhenFull: 1
+  sprintBarBG: {fileID: 1961879485786546424}
+  sprintBar: {fileID: 7700428931279503518}
+  sprintBarWidthPercent: 0.3
+  sprintBarHeightPercent: 0.015
+  enableJump: 1
+  jumpPower: 5
+  enableCrouch: 1
+  holdToCrouch: 1
+  crouchHeight: 0.75
+  speedReduction: 0.5
+  enableHeadBob: 1
+  joint: {fileID: 4218056670037412825}
+  bobSpeed: 10
+  bobAmount: {x: 0.15, y: 0.05, z: 0}
+  enableVault: 0
+  maxVaultHeight: 1.1
+  vaultDuration: 0.4
+  vaultDetectionRange: 1
+  vaultableLayer:
+    serializedVersion: 2
+    m_Bits: 8
+  vaultRayOriginHeight: 0.35
+  vaultTopCheckHeight: 1.5
+  vaultLandingCheckDepth: 2
+  groundCheckRadius: 0.381
+  groundCheckExtraDistance: 0.05
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 63
 --- !u!54 &7522343059036594958
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -301,7 +369,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
---- !u!114 &8817980043613490018
+--- !u!114 &673382889151638631
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -310,53 +378,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 1196708342303727873}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d90ba6530d9bfda47abb4610956b2f44, type: 3}
+  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  playerCamera: {fileID: 185008832173987186}
-  fov: 60
-  invertCamera: 0
-  cameraCanMove: 1
-  mouseSensitivity: 2
-  maxLookAngle: 50
-  lockCursor: 1
-  crosshair: 1
-  crosshairImage: {fileID: 21300000, guid: be4ce60e2c9768c44b9b10b9c5258045, type: 3}
-  crosshairColor: {r: 1, g: 1, b: 1, a: 1}
-  enableZoom: 1
-  holdToZoom: 1
-  zoomKey: 324
-  zoomFOV: 30
-  zoomStepTime: 5
-  playerCanMove: 1
-  walkSpeed: 5
-  maxVelocityChange: 10
-  enableSprint: 1
-  unlimitedSprint: 1
-  sprintKey: 304
-  sprintSpeed: 7
-  sprintDuration: 5
-  sprintCooldown: 0.5
-  sprintFOV: 80
-  sprintFOVStepTime: 10
-  useSprintBar: 1
-  hideBarWhenFull: 1
-  sprintBarBG: {fileID: 1961879485786546424}
-  sprintBar: {fileID: 7700428931279503518}
-  sprintBarWidthPercent: 0.3
-  sprintBarHeightPercent: 0.02
-  enableJump: 1
-  jumpKey: 32
-  jumpPower: 5
-  enableCrouch: 1
-  holdToCrouch: 1
-  crouchKey: 306
-  crouchHeight: 0.75
-  speedReduction: 0.5
-  enableHeadBob: 1
-  joint: {fileID: 4218056670037412825}
-  bobSpeed: 5
-  bobAmount: {x: 0, y: 0.1, z: 0}
+  m_EditorClassIdentifier: Unity.InputSystem::UnityEngine.InputSystem.PlayerInput
+  m_Actions: {fileID: -944628639613478452, guid: ef8661095bb2e50489353a162cc97931,
+    type: 3}
+  m_NotificationBehavior: 0
+  m_UIInputModule: {fileID: 0}
+  m_DeviceLostEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_DeviceRegainedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ControlsChangedEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  m_ActionEvents: []
+  m_NeverAutoSwitchControlSchemes: 0
+  m_DefaultControlScheme: 
+  m_DefaultActionMap: 
+  m_SplitScreenIndex: -1
+  m_Camera: {fileID: 0}
 --- !u!1 &7759229164242291398
 GameObject:
   m_ObjectHideFlags: 0
@@ -499,7 +542,7 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
+  near clip plane: 0.01
   far clip plane: 1000
   field of view: 60
   orthographic: 0
@@ -680,12 +723,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BodycamVignetteHDRP
   player: {fileID: 788329818951102697}
   volume: {fileID: 0}
-  baseIntensity: 0.2
-  maxIntensity: 0.6
-  swayAmount: 1
-  swaySpeed: 5
-  rotationLagAmount: 10
-  rotationLagSpeed: 5
+  playerController: {fileID: 0}
+  baseIntensity: 0.39
+  maxIntensity: 0.5
+  vignetteShiftAmount: 0.05
+  vignetteReturnSpeed: 10
+  swayAmount: 0.05
+  swaySpeed: 2
+  rotationLagAmount: 0.05
+  rotationLagSpeed: 3
 --- !u!1 &8656296113635588051
 GameObject:
   m_ObjectHideFlags: 0
